@@ -1,0 +1,54 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/bricolage-grotesque';
+@import '@fontsource/atkinson-hyperlegible/400.css';
+@import '@fontsource/atkinson-hyperlegible/700.css';
+
+/* Paleta Intrapola: el verde del uniforme (#BCDBC2) como marco de la marca,
+   un verde pino profundo para acciones y texto destacado, y un tono galleta
+   reservado para lo festivo (cumpleaños, eventos). */
+@theme {
+  --font-display: 'Bricolage Grotesque Variable', system-ui, sans-serif;
+  --font-sans: 'Atkinson Hyperlegible', system-ui, sans-serif;
+
+  --color-sage: #bcdbc2;
+  --color-sage-50: #f1f7f2;
+  --color-sage-100: #e2efe5;
+  --color-sage-200: #cfe4d4;
+  --color-sage-400: #8fbd99;
+  --color-pine: #1f4a33;
+  --color-pine-600: #2a6044;
+  --color-pine-800: #163626;
+  --color-ink: #17231c;
+  --color-muted: #5a6b61;
+  --color-paper: #f7faf7;
+  --color-line: #d7e3da;
+  --color-biscuit: #d99a3a;
+  --color-biscuit-100: #f8ead3;
+  --color-danger: #b42318;
+  --color-danger-50: #fdeceb;
+}
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    @apply bg-paper font-sans text-ink antialiased;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  h1, h2, h3 { @apply font-display text-ink; letter-spacing: -0.015em; line-height: 1.15; }
+  :focus-visible { outline: 3px solid var(--color-pine-600); outline-offset: 2px; border-radius: 6px; }
+  ::selection { background: var(--color-sage); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+@keyframes subir {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.animar-entrada > * { animation: subir 420ms cubic-bezier(.2,.7,.2,1) both; }
+.animar-entrada > *:nth-child(2) { animation-delay: 60ms; }
+.animar-entrada > *:nth-child(3) { animation-delay: 120ms; }
+.animar-entrada > *:nth-child(4) { animation-delay: 180ms; }
