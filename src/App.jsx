@@ -15,6 +15,11 @@ const DesarrolloForm = lazy(() => import('./features/solicitudes/formularios/Des
 const SoporteForm = lazy(() => import('./features/solicitudes/formularios/SoporteForm.jsx'));
 const VacacionesForm = lazy(() => import('./features/solicitudes/formularios/VacacionesForm.jsx'));
 const AnticipoPage = lazy(() => import('./features/solicitudes/anticipo/AnticipoPage.jsx'));
+const ReembolsoSeguroPage = lazy(() => import('./features/formatos/ReembolsoSeguroPage.jsx'));
+const RelacionGastosPage = lazy(() => import('./features/formatos/RelacionGastosPage.jsx'));
+const SalidaMaterialesPage = lazy(() => import('./features/formatos/SalidaMaterialesPage.jsx'));
+const MaterialSapPage = lazy(() => import('./features/formatos/MaterialSapPage.jsx'));
+const EvaluacionPage = lazy(() => import('./features/evaluaciones/EvaluacionPage.jsx'));
 const UsuariosForm = lazy(() => import('./features/solicitudes/formularios/UsuariosForm.jsx'));
 const NormasPage = lazy(() => import('./features/normas/NormasPage.jsx'));
 const FormatosPage = lazy(() => import('./features/formatos/FormatosPage.jsx'));
@@ -56,7 +61,16 @@ export default function App() {
             </Route>
             <Route path="comunicados" element={<ComunicadosPage />} />
             <Route path="normas" element={<NormasPage />} />
-            <Route path="formatos" element={<FormatosPage />} />
+            <Route path="formatos">
+              <Route index element={<FormatosPage />} />
+              <Route path="reembolso-seguro" element={<ReembolsoSeguroPage />} />
+              <Route path="relacion-gastos" element={<RelacionGastosPage />} />
+              <Route path="salida-materiales" element={<SalidaMaterialesPage />} />
+              <Route path="materiales-sap" element={<MaterialSapPage />} />
+              <Route path="evaluacion-servicios" element={<EvaluacionPage key="servicios" clave="servicios" />} />
+              <Route path="evaluacion-mpme" element={<EvaluacionPage key="mpme" clave="mpme" />} />
+              <Route path="evaluacion-transporte" element={<EvaluacionPage key="transporte" clave="transporte" />} />
+            </Route>
             <Route path="eventos" element={<EventosPage />} />
             <Route path="precios" element={<PreciosPage />} />
             <Route path="directorio" element={<DirectorioPage />} />

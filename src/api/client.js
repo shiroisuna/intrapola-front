@@ -51,8 +51,9 @@ export const api = {
 /** URL absoluta para archivos servidos por el backend (/uploads/...). */
 export const archivoUrl = (ruta) => {
   if (!ruta || /^https?:\/\//.test(ruta) || ruta === '#') return ruta;
-  const origen = import.meta.env.VITE_API_URL ? new URL(import.meta.env.VITE_API_URL).origin : '';
-  return `${origen}${ruta}`;
+  if (import.meta.env.VITE_API_URL) return `${new URL(import.meta.env.VITE_API_URL).origin}${ruta}`;
+  // Misma app publicada en subcarpeta (ej. /intrapola/uploads/...)
+  return `${import.meta.env.BASE_URL.replace(/\/$/, '')}${ruta}`;
 };
 
 /** URL absoluta de un recurso de la API (ej. un PDF), respetando VITE_API_URL o el proxy de Vite. */

@@ -39,7 +39,7 @@ function Exito({ resultado, titulo, onNueva, acciones }) {
  * onEnviar: async ({ cedula }) => resultado del API
  * validar:  () => objeto de errores por campo (vacío si todo está bien)
  */
-export function FormularioSolicitud({ titulo, descripcion, textoBoton = 'Enviar solicitud', onEnviar, validar, onReiniciar, accionesExito, children }) {
+export function FormularioSolicitud({ titulo, descripcion, volver = { to: '/solicitudes', texto: 'Solicitudes' }, textoBoton = 'Enviar solicitud', onEnviar, validar, onReiniciar, accionesExito, children }) {
   const empleadoHook = useEmpleado();
   const [enviando, setEnviando] = useState(false);
   const [errores, setErrores] = useState({});
@@ -79,7 +79,7 @@ export function FormularioSolicitud({ titulo, descripcion, textoBoton = 'Enviar 
 
   return (
     <>
-      <PageHeader titulo={titulo} descripcion={descripcion} volver={{ to: '/solicitudes', texto: 'Solicitudes' }} />
+      <PageHeader titulo={titulo} descripcion={descripcion} volver={volver} />
 
       {resultado ? (
         <Exito resultado={resultado} titulo={titulo} onNueva={nueva} acciones={accionesExito?.(resultado)} />

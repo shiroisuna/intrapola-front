@@ -127,6 +127,60 @@ export async function mockRequest(method, path, body) {
     }
     const cum = path.match(/^\/cumpleanos(?:\?mes=(\d+))?$/);
     if (cum) return cumpleanos(Number(cum[1] || mesActual));
+    if (path === '/evaluaciones/servicios') {
+      const pq = (pairs) => pairs.map(([texto, max]) => ({ texto, max }));
+      const secciones = [
+        ['Calidad del Servicio', pq([['Contó con la logística necesaria en cuanto a transporte, equipos y herramientas menores para cumplir con el objeto del contrato.', 15], ['Durante la ejecución del servicio contó con personal técnico calificado.', 20], ['El servicio se prestó de acuerdo a lo pactado.', 20], ['Se contó con los equipos y herramientas adecuados.', 5]])],
+        ['Cumplimiento en los tiempos y Disponibilidad', pq([['Cuenta con la disposición para la ejecución del servicio.', 5], ['Cumplió con los tiempos pactados.', 5]])],
+        ['Cumplimiento en Cantidad', pq([['Cumplió con la entrega de las cantidades y usos de los insumos.', 10]])],
+        ['Servicio Durante y Postventa', pq([['Dio respuesta a los requerimientos o reclamos.', 10], ['La respuesta fue oportuna.', 10]])],
+      ].map(([nombre, preguntas], i) => ({ id: i, nombre, preguntas: preguntas.map((p, j) => ({ ...p, id: `${i}.${j}` })) }));
+      return {
+        clave: 'servicios', titulo: 'Evaluación de proveedores de servicios', puntajeMaximo: 100, secciones,
+        campos: [{ nombre: 'contrato', etiqueta: 'Contrato u orden N.º', tipo: 'texto', requerido: true }, { nombre: 'factura', etiqueta: 'Documento factura', tipo: 'texto' }, { nombre: 'descripcion', etiqueta: 'Tipo de servicio ejecutado', tipo: 'texto', requerido: true, ancho: 'completo' }],
+        formato: { codigo: 'FO-CO-004', titulo: 'Criterios de evaluación de proveedores de servicios' },
+        escala: [{ desde: 80, calificacion: 'Excelente', decision: 'Aceptado Sin Condicion' }, { desde: 60, calificacion: 'Bueno', decision: 'Aceptado con Condicion' }, { desde: 0, calificacion: 'Regular', decision: 'En Evaluacion' }],
+      };
+    }
+    if (path === '/evaluaciones/mpme') {
+      return {
+        clave: 'mpme', titulo: 'Evaluación de proveedores MP / ME / MI / C', puntajeMaximo: 60,
+        formato: { codigo: 'FO-CO-003', titulo: 'Criterios de evaluación de proveedores MP / ME / MI / C' },
+        campos: [
+          { nombre: 'tipoProveedor', etiqueta: 'Tipo de proveedor', tipo: 'select', requerido: true, opciones: ['Materia Prima', 'Material de Empaque', 'Material Indirecto', 'Consumible'] },
+          { nombre: 'descripcion', etiqueta: 'Material suministrado', tipo: 'texto', requerido: true, ancho: 'doble' },
+          { nombre: 'cantSuministrada', etiqueta: 'Cantidad suministrada', tipo: 'numero', requerido: true },
+          { nombre: 'cantRechazada', etiqueta: 'Cantidad rechazada', tipo: 'numero', requerido: true, porDefecto: '0' },
+          { nombre: 'lote', etiqueta: 'Lote Amapola', tipo: 'texto', requerido: true },
+          { nombre: 'contrato', etiqueta: 'Contrato u orden N.º', tipo: 'texto', requerido: true },
+          { nombre: 'factura', etiqueta: 'Documento factura / NE', tipo: 'texto', requerido: true },
+        ],
+        secciones: [{ id: 0, nombre: 'Calidad del Producto', preguntas: [['Cumplió con los documentos requeridos para la recepción de mercancía.', 10], ['Cumplió con las especificaciones técnicas y de funcionalidad requeridas.', 30], ['Los productos entregados estaban en buenas condiciones físicas.', 10], ['Los vehículos cumplen con las condiciones higiénicas requeridas.', 10]].map(([texto, max], j) => ({ id: `0.${j}`, texto, max })) }],
+        escala: [{ desde: 80, calificacion: 'Excelente', decision: 'Aceptado Sin Condicion' }, { desde: 60, calificacion: 'Bueno', decision: 'Aceptado con Condicion' }, { desde: 0, calificacion: 'Regular', decision: 'En Evaluacion' }],
+      };
+    }
+    if (path === '/evaluaciones/transporte') {
+      const sec = [['Asegurabilidad del Traslado y Descarga del Producto', [['Cuenta con la unidad de transporte en óptimas condiciones.', 15], ['Contó con el personal ayudante / caletero.', 10]]],
+        ['Tiempo de Entrega / Cumplimiento', [['No presentó retraso en la entrega.', 25]]], ['Comunicación Efectiva', [['Mantuvo una comunicación efectiva.', 25]]],
+        ['Reclamos', [['El cliente no manifestó actitudes irrespetuosas.', 15], ['El cliente no manifestó mala manipulación del PT.', 10]]]];
+      return {
+        clave: 'transporte', titulo: 'Evaluación de proveedores de transporte (PT)', puntajeMaximo: 100, numeroAutomatico: true,
+        formato: { codigo: 'FO-CO-004', titulo: 'Criterios de evaluación de proveedores de servicios — Transporte' },
+        campos: [{ nombre: 'contrato', etiqueta: 'N.º de evaluación', tipo: 'auto', ayuda: 'Se genera con el código del proveedor y el mes' }, { nombre: 'correo', etiqueta: 'Correo del proveedor', tipo: 'email', ayuda: 'Le llegará el resultado de la evaluación' }],
+        secciones: sec.map(([nombre, ps], i) => ({ id: i, nombre, preguntas: ps.map(([texto, max], j) => ({ id: `${i}.${j}`, texto, max })) })),
+        escala: [{ desde: 80, calificacion: 'Excelente', decision: 'Aceptado Sin Condicion' }, { desde: 60, calificacion: 'Bueno', decision: 'Aceptado con Condicion' }, { desde: 0, calificacion: 'Regular', decision: 'En Evaluacion' }],
+      };
+    }
+    if (path.startsWith('/evaluaciones/transporte/numero')) return { contrato: '00872610', existe: false };
+    if (path.startsWith('/evaluaciones/proveedores')) return { rif: 'J-12345678-9', nombre: 'SERVICIOS INDUSTRIALES DEL CENTRO, C.A.', codigo: '100245' };
+    if (path.startsWith('/evaluaciones/contratos')) return { existe: false };
+    if (path === '/formatos/materiales-sap/opciones') {
+      return {
+        tipos: [{ valor: 'CREACION', texto: 'Creación' }, { valor: 'MODIFICACION', texto: 'Modificación' }, { valor: 'DESINCORPORACION', texto: 'Desincorporación' }],
+        verificacion: [{ valor: 'SI EXISTE', texto: 'Sí existe en SAP', conCodigo: true }, { valor: 'NO EXISTE', texto: 'No existe en SAP', conCodigo: false }],
+      };
+    }
+    if (path === '/formatos/relacion-gastos/tipos') return ['Alimentacion y Refrigerios', 'Transporte', 'Hospedaje', 'Peajes'];
     if (path === '/solicitudes/usuarios/opciones') {
       return {
         sap: ['FI', 'MM', 'SD', 'QM', 'PP', 'PM'].map((m) => ({ codigo: m, nombre: `Módulo ${m}` })),
