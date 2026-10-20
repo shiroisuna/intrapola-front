@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Menu, X, ExternalLink } from 'lucide-react';
+import { Menu, X, ExternalLink, Settings } from 'lucide-react';
 import { NAVEGACION } from '../../config/navegacion.js';
 import { useApi } from '../../hooks/useApi.js';
 import { archivoUrl } from '../../api/client.js';
@@ -93,7 +93,12 @@ export function AppLayout() {
         </div>
         <Navegacion onNavegar={cerrar} />
         <OtrosSistemas />
-        <p className="mt-auto px-3 pt-8 text-[13px] text-pine-800/60">Departamento de Sistemas</p>
+        <p className="mt-auto flex items-center justify-between gap-2 px-3 pt-8 text-[13px] text-pine-800/60">
+          Departamento de Sistemas
+          <NavLink to="/admin" onClick={cerrar} className="rounded-lg p-1.5 hover:bg-white/50 hover:text-pine-800" title="Administración" aria-label="Administración">
+            <Settings className="size-4" aria-hidden />
+          </NavLink>
+        </p>
       </aside>
 
       <main id="contenido" className="min-w-0 px-4 py-8 sm:px-8 lg:px-12 lg:py-12">

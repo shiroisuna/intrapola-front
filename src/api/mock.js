@@ -217,6 +217,7 @@ export async function mockRequest(method, path, body) {
         avisos: [],
       };
     }
+    if (path === '/tema') return { marca: '#bcdbc2', accion: '#1f4a33', acento: '#d99a3a' };
     if (path in data) return data[path];
     throw new ApiError(404, `Sin datos de demostración para ${path}`);
   }

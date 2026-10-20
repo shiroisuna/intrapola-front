@@ -28,6 +28,16 @@ const PreciosPage = lazy(() => import('./features/precios/PreciosPage.jsx'));
 const DirectorioPage = lazy(() => import('./features/directorio/DirectorioPage.jsx'));
 const CumpleanosPage = lazy(() => import('./features/cumpleanos/CumpleanosPage.jsx'));
 const EmpresaPage = lazy(() => import('./features/empresa/EmpresaPage.jsx'));
+const GaleriaEventoPage = lazy(() => import('./features/eventos/GaleriaEventoPage.jsx'));
+const AdminPage = lazy(() => import('./features/admin/AdminPage.jsx'));
+const ImagenesAdmin = lazy(() => import('./features/admin/ImagenesAdmin.jsx'));
+const NormasAdmin = lazy(() => import('./features/admin/NormasAdmin.jsx'));
+const AparienciaAdmin = lazy(() => import('./features/admin/AparienciaAdmin.jsx'));
+const DirectorioAdmin = lazy(() => import('./features/admin/DirectorioAdmin.jsx'));
+const EmpresaAdmin = lazy(() => import('./features/admin/EmpresaAdmin.jsx'));
+const ListaEventos = lazy(() => import('./features/admin/EventosAdmin.jsx').then((m) => ({ default: m.ListaEventos })));
+const NuevoEvento = lazy(() => import('./features/admin/EventosAdmin.jsx').then((m) => ({ default: m.NuevoEvento })));
+const EditarEvento = lazy(() => import('./features/admin/EventosAdmin.jsx').then((m) => ({ default: m.EditarEvento })));
 
 function NoEncontrada() {
   return (
@@ -72,6 +82,18 @@ export default function App() {
               <Route path="evaluacion-transporte" element={<EvaluacionPage key="transporte" clave="transporte" />} />
             </Route>
             <Route path="eventos" element={<EventosPage />} />
+            <Route path="eventos/:id" element={<GaleriaEventoPage />} />
+            <Route path="admin" element={<AdminPage />}>
+              <Route path="banners" element={<ImagenesAdmin key="banners" tipo="banners" />} />
+              <Route path="comunicados" element={<ImagenesAdmin key="comunicados" tipo="comunicados" />} />
+              <Route path="eventos" element={<ListaEventos />} />
+              <Route path="eventos/nuevo" element={<NuevoEvento />} />
+              <Route path="eventos/:id" element={<EditarEvento />} />
+              <Route path="normas" element={<NormasAdmin />} />
+              <Route path="directorio" element={<DirectorioAdmin />} />
+              <Route path="empresa" element={<EmpresaAdmin />} />
+              <Route path="apariencia" element={<AparienciaAdmin />} />
+            </Route>
             <Route path="precios" element={<PreciosPage />} />
             <Route path="directorio" element={<DirectorioPage />} />
             <Route path="cumpleanos" element={<CumpleanosPage />} />

@@ -1,4 +1,5 @@
-import { CalendarDays, ExternalLink, Images, MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, CalendarDays, ExternalLink, Images, MapPin } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Cargando, ErrorCarga, Vacio } from '../../components/ui/Feedback.jsx';
 import { useApi } from '../../hooks/useApi.js';
@@ -23,9 +24,9 @@ function Evento({ e }) {
         )}
         {e.lugar && <p className="flex items-center gap-1.5 text-[15px] text-muted"><MapPin className="size-4" aria-hidden />{e.lugar}</p>}
         {e.descripcion && <p className="mt-1">{e.descripcion}</p>}
-        {e.enlace && (
+        {(e.enlace || e.galeria) && (
           <span className="mt-auto inline-flex items-center gap-1.5 pt-3 font-bold text-pine group-hover:underline">
-            Ver fotos <ExternalLink className="size-4" aria-hidden />
+            Ver fotos {e.galeria ? <ArrowRight className="size-4" aria-hidden /> : <ExternalLink className="size-4" aria-hidden />}
           </span>
         )}
       </div>
@@ -35,7 +36,9 @@ function Evento({ e }) {
   const clase = 'group flex h-full flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-line';
   return (
     <li>
-      {e.enlace
+      {e.galeria
+        ? <Link to={`/eventos/${e.id}`} className={`${clase} hover:ring-sage-400`}>{contenido}</Link>
+        : e.enlace
         ? <a href={e.enlace} target="_blank" rel="noreferrer" className={`${clase} hover:ring-sage-400`}>{contenido}</a>
         : <div className={clase}>{contenido}</div>}
     </li>

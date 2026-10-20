@@ -45,13 +45,38 @@ export const api = {
   post: (path, body, opciones) => request('POST', path, body, opciones),
   /** Descarga binaria (PDF) con sesión: devuelve un Blob. */
   blob: (path, opciones) => request('GET', path, undefined, { ...opciones, blob: true }),
-  patch: (path, body) => request('PATCH', path, body),
+  patch: (path, body, opciones) => request('PATCH', path, body, opciones),
+  put: (path, body, opciones) => request('PUT', path, body, opciones),
+  del: (path, opciones) => request('DELETE', path, undefined, opciones),
 };
+
+/**
+ * Subida de archivos con progreso (fetch no informa el avance). onProgreso recibe 0..1.
+ * Devuelve la respuesta JSON igual que api.post.
+ */
+export function subir(method, path, formData, { token, onProgreso } = {}) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, `${BASE}${path}`);
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.upload.onprogress = (e) => e.lengthComputable && onProgreso?.(e.loaded / e.total);
+    xhr.onerror = () => reject(new ApiError(0, 'No hay conexión con el servidor de Intrapola. Verifique la red e intente de nuevo.'));
+    xhr.onload = () => {
+      let data = null;
+      try { data = xhr.responseText ? JSON.parse(xhr.responseText) : null; } catch { /* respuesta sin JSON */ }
+      if (xhr.status >= 200 && xhr.status < 300) resolve(data);
+      else reject(new ApiError(xhr.status, data?.error || `Error ${xhr.status}`, data?.detalles));
+    };
+    xhr.send(formData);
+  });
+}
 
 /** URL absoluta para archivos servidos por el backend (/uploads/...). */
 export const archivoUrl = (ruta) => {
   if (!ruta || /^https?:\/\//.test(ruta) || ruta === '#') return ruta;
-  if (import.meta.env.VITE_API_URL) return `${new URL(import.meta.env.VITE_API_URL).origin}${ruta}`;
+  if (ruta.startsWith('/api/')) return `${BASE}${ruta.slice(4)}`;
+  // VITE_API_URL = http://servidor:5200/api (o .../intrapola/api) → los archivos están al lado: .../uploads/...
+  if (import.meta.env.VITE_API_URL) return `${import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '')}${ruta}`;
   // Misma app publicada en subcarpeta (ej. /intrapola/uploads/...)
   return `${import.meta.env.BASE_URL.replace(/\/$/, '')}${ruta}`;
 };
