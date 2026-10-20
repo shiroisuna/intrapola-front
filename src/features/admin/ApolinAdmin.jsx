@@ -50,6 +50,9 @@ function EstadoIa() {
             <li key={p.id} className="rounded-xl bg-sage-50 p-3.5">
               <p className="font-bold">{p.id === 'nube' ? `Nube: ${p.nombre}` : 'Servidor: Ollama'}</p>
               {p.modelo && <p className="text-sm text-muted">Modelo {p.modelo}</p>}
+              {p.id === 'nube' && p.configurado && (
+                <p className="text-sm text-muted">Búsqueda en internet: {{ activa: 'activa', apagada: 'apagada', rechazada: 'el modelo no la admite' }[p.busqueda]}</p>
+              )}
               <p className={`mt-1 text-sm font-bold ${clase}`}>{texto}</p>
               {p.configurado && <p className="mt-1 text-sm text-muted">Hoy: {p.uso.preguntas} {p.uso.preguntas === 1 ? "respuesta" : "respuestas"} · {p.uso.tokens.toLocaleString('es-VE')} tokens{p.uso.errores ? ` · ${p.uso.errores} fallas` : ''}</p>}
             </li>
