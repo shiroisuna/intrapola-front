@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
-import { Building2, CalendarDays, FileText, GalleryHorizontal, LockKeyhole, LogIn, LogOut, Megaphone, Palette, Phone } from 'lucide-react';
+import { Bot, Building2, CalendarDays, FileText, GalleryHorizontal, LockKeyhole, LogIn, LogOut, Megaphone, Palette, Phone } from 'lucide-react';
 import { Field, Input } from '../../components/ui/Field.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Alert } from '../../components/ui/Feedback.jsx';
@@ -13,6 +13,7 @@ export const SECCIONES = [
   { to: 'normas', texto: 'Normas', icono: FileText },
   { to: 'directorio', texto: 'Directorio', icono: Phone },
   { to: 'empresa', texto: 'Empresa', icono: Building2 },
+  { to: 'apolin', texto: 'Apolin', icono: Bot },
   { to: 'apariencia', texto: 'Apariencia', icono: Palette },
 ];
 
@@ -70,7 +71,7 @@ export default function AdminPage() {
       </header>
 
       <nav aria-label="Secciones de administración" className="-mx-4 mb-8 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        <ul className="flex w-max gap-1 rounded-2xl bg-white p-1.5 ring-1 ring-line">
+        <ul className="flex w-max gap-1 rounded-2xl bg-white p-1.5 ring-1 ring-line lg:w-auto lg:flex-wrap">
           {SECCIONES.map(({ to, texto, icono: Icono }) => (
             <li key={to}>
               <NavLink to={to} className={({ isActive }) =>

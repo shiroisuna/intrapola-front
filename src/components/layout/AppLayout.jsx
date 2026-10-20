@@ -5,6 +5,7 @@ import { NAVEGACION } from '../../config/navegacion.js';
 import { useApi } from '../../hooks/useApi.js';
 import { archivoUrl } from '../../api/client.js';
 import { Marca } from './Marca.jsx';
+import { Apolin } from '../apolin/Apolin.jsx';
 
 function Navegacion({ onNavegar }) {
   return (
@@ -101,11 +102,12 @@ export function AppLayout() {
         </p>
       </aside>
 
-      <main id="contenido" className="min-w-0 px-4 py-8 sm:px-8 lg:px-12 lg:py-12">
+      <main id="contenido" className="min-w-0 px-4 pb-32 pt-8 sm:px-8 lg:px-12 lg:pt-12">
         <div className="mx-auto max-w-6xl">
           <Outlet />
         </div>
       </main>
+      <Apolin />
     </div>
   );
 }

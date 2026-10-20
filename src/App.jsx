@@ -35,6 +35,7 @@ const NormasAdmin = lazy(() => import('./features/admin/NormasAdmin.jsx'));
 const AparienciaAdmin = lazy(() => import('./features/admin/AparienciaAdmin.jsx'));
 const DirectorioAdmin = lazy(() => import('./features/admin/DirectorioAdmin.jsx'));
 const EmpresaAdmin = lazy(() => import('./features/admin/EmpresaAdmin.jsx'));
+const ApolinAdmin = lazy(() => import('./features/admin/ApolinAdmin.jsx'));
 const ListaEventos = lazy(() => import('./features/admin/EventosAdmin.jsx').then((m) => ({ default: m.ListaEventos })));
 const NuevoEvento = lazy(() => import('./features/admin/EventosAdmin.jsx').then((m) => ({ default: m.NuevoEvento })));
 const EditarEvento = lazy(() => import('./features/admin/EventosAdmin.jsx').then((m) => ({ default: m.EditarEvento })));
@@ -92,6 +93,7 @@ export default function App() {
               <Route path="normas" element={<NormasAdmin />} />
               <Route path="directorio" element={<DirectorioAdmin />} />
               <Route path="empresa" element={<EmpresaAdmin />} />
+              <Route path="apolin" element={<ApolinAdmin />} />
               <Route path="apariencia" element={<AparienciaAdmin />} />
             </Route>
             <Route path="precios" element={<PreciosPage />} />

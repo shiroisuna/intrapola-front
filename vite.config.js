@@ -15,11 +15,18 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), tailwindcss()],
     base,
     server: {
-      port: 5173,
+      port: Number(env.DEV_PORT || 5173),
       proxy: {
         '/api': 'http://localhost:5200',
         '/uploads': 'http://localhost:5200',
       },
+    },
+    // npm run preview: sirve el build ya compilado. En el servidor se define el puerto en .env.production
+    // (PREVIEW_PORT=8080) y PREVIEW_HOST=true para que se pueda abrir desde otros equipos por IP.
+    preview: {
+      port: Number(env.PREVIEW_PORT || 4173),
+      strictPort: true, // si el puerto está ocupado, falla en vez de cambiar de puerto sin avisar
+      host: env.PREVIEW_HOST === 'true' ? true : (env.PREVIEW_HOST || undefined),
     },
   };
 });
