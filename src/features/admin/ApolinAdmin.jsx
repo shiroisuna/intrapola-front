@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BellPlus, Bot, CircleCheck, CircleX, Save } from 'lucide-react';
+import { BellPlus, Bot, Save } from 'lucide-react';
 import { Button } from '../../components/ui/Button.jsx';
 import { Field, Input, Select, Textarea } from '../../components/ui/Field.jsx';
 import { Alert, Cargando, ErrorCarga, Vacio } from '../../components/ui/Feedback.jsx';
@@ -15,20 +15,48 @@ const hoy = () => new Date().toISOString().slice(0, 10);
 const fecha = (iso) => (iso ? iso.split('-').reverse().join('/') : '—');
 
 function EstadoIa() {
-  const { data, loading } = useCarga('/apolin/estado');
-  if (loading || !data) return null;
+  const { data, loading, recargar } = useCarga('/apolin/estado');
+  if (loading && !data) return <Cargando texto="Revisando la IA…" />;
+  if (!data) return null;
   const { ia } = data;
-  const [Icono, texto, clase] = !ia.configurada
-    ? [Bot, 'IA desactivada: Apolin funciona solo con el menú. Para activarla, configure APOLIN_OLLAMA_URL en el servidor.', 'bg-white text-muted ring-line']
-    : !ia.disponible
-      ? [CircleX, `No hay conexión con Ollama (${ia.error}). Apolin sigue funcionando con el menú.`, 'bg-danger-50 text-danger ring-danger/20']
-      : !ia.modeloInstalado
-        ? [CircleX, `Ollama responde, pero falta el modelo ${ia.modelo}. En el servidor: ollama pull ${ia.modelo}`, 'bg-biscuit-100 text-[#7a4e10] ring-biscuit/30']
-        : [CircleCheck, `IA activa con el modelo ${ia.modelo}: aparece la opción “Conversar con Apolin”.`, 'bg-sage-100 text-pine ring-sage-400/40'];
+  if (!ia.configurada) {
+    return (
+      <p className="flex items-start gap-2.5 rounded-2xl bg-white px-4 py-3 text-[15px] text-muted ring-1 ring-line">
+        <Bot className="mt-0.5 size-5 shrink-0" aria-hidden />
+        Preguntas generales desactivadas: Apolin funciona solo con el menú. Configure APOLIN_NUBE_* o APOLIN_OLLAMA_URL en el .env del servidor.
+      </p>
+    );
+  }
+  const estado = (p) => {
+    if (!p.configurado) return ['No configurado', 'text-muted'];
+    if (p.agotadoHasta) return [`Sin cuota hasta ${new Date(p.agotadoHasta).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' })}`, 'text-[#7a4e10]'];
+    if (p.disponible === false) return [`Sin conexión (${p.error})`, 'text-danger'];
+    if (p.id === 'local' && p.modeloInstalado === false) return [`Falta el modelo: ollama pull ${p.modelo}`, 'text-[#7a4e10]'];
+    return ['Disponible', 'text-pine'];
+  };
   return (
-    <p className={`flex items-start gap-2.5 rounded-2xl px-4 py-3 text-[15px] ring-1 ${clase}`}>
-      <Icono className="mt-0.5 size-5 shrink-0" aria-hidden />{texto}
-    </p>
+    <section className="rounded-2xl bg-white p-4 ring-1 ring-line sm:p-5">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 text-lg font-bold"><Bot className="size-5 text-pine" aria-hidden />Preguntas generales</h2>
+        <Button variante="fantasma" tamano="sm" onClick={recargar} cargando={loading}>Actualizar</Button>
+      </div>
+      <p className="mb-3 text-sm text-muted">
+        Orden: {ia.orden.map((o) => (o === 'nube' ? 'nube' : 'servidor (Ollama)')).join(' → ')} · {ia.preguntasPorPersona} preguntas por persona al día · {ia.personasHoy} {ia.personasHoy === 1 ? 'persona' : 'personas'} hoy
+      </p>
+      <ul className="grid gap-3 sm:grid-cols-2">
+        {ia.proveedores.map((p) => {
+          const [texto, clase] = estado(p);
+          return (
+            <li key={p.id} className="rounded-xl bg-sage-50 p-3.5">
+              <p className="font-bold">{p.id === 'nube' ? `Nube: ${p.nombre}` : 'Servidor: Ollama'}</p>
+              {p.modelo && <p className="text-sm text-muted">Modelo {p.modelo}</p>}
+              <p className={`mt-1 text-sm font-bold ${clase}`}>{texto}</p>
+              {p.configurado && <p className="mt-1 text-sm text-muted">Hoy: {p.uso.preguntas} {p.uso.preguntas === 1 ? "respuesta" : "respuestas"} · {p.uso.tokens.toLocaleString('es-VE')} tokens{p.uso.errores ? ` · ${p.uso.errores} fallas` : ''}</p>}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 

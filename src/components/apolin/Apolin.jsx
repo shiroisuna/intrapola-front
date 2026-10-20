@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink, LoaderCircle, RotateCcw, SendHorizontal, X } from 'lucide-react';
+import { ExternalLink, LoaderCircle, Maximize2, Minimize2, RotateCcw, SendHorizontal, X } from 'lucide-react';
 import { api, archivoUrl } from '../../api/client.js';
 
 /*
@@ -14,14 +14,45 @@ const leer = () => { try { return JSON.parse(sessionStorage.getItem(CLAVE)) ?? n
 const guardar = (e) => { try { sessionStorage.setItem(CLAVE, JSON.stringify(e)); } catch { /* sin almacenamiento */ } };
 const borrar = () => { try { sessionStorage.removeItem(CLAVE); } catch { /* sin almacenamiento */ } };
 
-/** **negrita** y saltos de línea; todo lo demás se muestra como texto (sin HTML). */
+/** Formato en línea: **negrita**, _cursiva_ y `código`. Todo lo demás es texto (sin HTML). */
+function EnLinea({ texto }) {
+  return String(texto).split(/(\*\*[^*]+\*\*|`[^`]+`|\b_[^_]+_\b)/g).map((p, j) => {
+    if (p.startsWith('**') && p.endsWith('**') && p.length > 4) return <b key={j}>{p.slice(2, -2)}</b>;
+    if (p.startsWith('`') && p.endsWith('`') && p.length > 2) return <code key={j} className="rounded bg-sage-100 px-1 py-0.5 font-mono text-[13px] text-pine-800">{p.slice(1, -1)}</code>;
+    if (p.startsWith('_') && p.endsWith('_') && p.length > 2) return <i key={j} className="text-muted">{p.slice(1, -1)}</i>;
+    return p;
+  });
+}
+
+/** Párrafos, listas ("- " o "1. ") y títulos ("### "), como los escribe la IA. */
 function Texto({ texto }) {
-  return String(texto).split('\n').map((linea, i) => (
-    <Fragment key={i}>
-      {i > 0 && <br />}
-      {linea.split(/(\*\*[^*]+\*\*)/g).map((p, j) => (p.startsWith('**') && p.endsWith('**') ? <b key={j}>{p.slice(2, -2)}</b> : p))}
-    </Fragment>
-  ));
+  const bloques = [];
+  for (const linea of String(texto).replace(/\r/g, '').split('\n')) {
+    const vineta = linea.match(/^\s*[-*•]\s+(.*)$/);
+    const numero = linea.match(/^\s*(\d+)[.)]\s+(.*)$/);
+    const titulo = linea.match(/^\s*#{1,6}\s+(.*)$/);
+    const ultimo = bloques.at(-1);
+    if (vineta) {
+      if (ultimo?.tipo === 'ul') ultimo.items.push(vineta[1]); else bloques.push({ tipo: 'ul', items: [vineta[1]] });
+    } else if (numero) {
+      if (ultimo?.tipo === 'ol') ultimo.items.push(numero[2]); else bloques.push({ tipo: 'ol', inicio: Number(numero[1]), items: [numero[2]] });
+    } else if (titulo) {
+      bloques.push({ tipo: 'h', texto: titulo[1] });
+    } else if (!linea.trim()) {
+      bloques.push({ tipo: 'espacio' });
+    } else if (ultimo?.tipo === 'p') {
+      ultimo.lineas.push(linea);
+    } else {
+      bloques.push({ tipo: 'p', lineas: [linea] });
+    }
+  }
+  return bloques.map((b, i) => {
+    if (b.tipo === 'ul') return <ul key={i} className="my-1 list-disc space-y-0.5 pl-5">{b.items.map((x, k) => <li key={k}><EnLinea texto={x} /></li>)}</ul>;
+    if (b.tipo === 'ol') return <ol key={i} start={b.inicio} className="my-1 list-decimal space-y-0.5 pl-5">{b.items.map((x, k) => <li key={k}><EnLinea texto={x} /></li>)}</ol>;
+    if (b.tipo === 'h') return <p key={i} className="mt-1 font-bold"><EnLinea texto={b.texto} /></p>;
+    if (b.tipo === 'espacio') return <span key={i} className="block h-1.5" />;
+    return <p key={i}>{b.lineas.map((l, k) => <Fragment key={k}>{k > 0 && <br />}<EnLinea texto={l} /></Fragment>)}</p>;
+  });
 }
 
 function Burbuja({ m, onNavegar }) {
@@ -140,12 +171,12 @@ function useArrastre() {
 }
 
 /** Dónde abrir el chat según dónde esté Apolin: arriba o abajo, a la izquierda o a la derecha. */
-function lugarDelChat(pos) {
+function lugarDelChat(pos, amplio) {
   const t = tamanoBoton();
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const W = Math.min(380, vw - MARGEN * 2);
-  const H = Math.min(600, vh - MARGEN * 2);
+  const W = Math.min(amplio ? 620 : 380, vw - MARGEN * 2);
+  const H = Math.min(amplio ? 760 : 600, vh - MARGEN * 2);
   const derecha = pos.x + t / 2 > vw / 2;
   const abajo = pos.y + t / 2 > vh / 2;
   let left = derecha ? pos.x + t - W : pos.x;
@@ -169,6 +200,12 @@ export function Apolin() {
   const [estado, setEstado] = useState(() => leer() ?? { conversacion: null, mensajes: [], opciones: [], entrada: 'numero', sugerencia: 'Número de ficha', cara: 'sonriente', usuario: null });
   const [texto, setTexto] = useState('');
   const [cargando, setCargando] = useState(false);
+  const [lento, setLento] = useState(false);
+  useEffect(() => {
+    if (!cargando) { setLento(false); return undefined; }
+    const t = setTimeout(() => setLento(true), 2500);
+    return () => clearTimeout(t);
+  }, [cargando]);
   const lista = useRef(null);
   const campo = useRef(null);
   const boton = useRef(null);
@@ -180,6 +217,8 @@ export function Apolin() {
     return () => window.removeEventListener('resize', r);
   }, []);
   const movil = ancho < 640;
+  const [amplio, setAmplio] = useState(() => { try { return localStorage.getItem('intrapola-apolin-amplio') === '1'; } catch { return false; } });
+  const alternarAmplio = () => setAmplio((a) => { try { localStorage.setItem('intrapola-apolin-amplio', a ? '0' : '1'); } catch { /* sin almacenamiento */ } return !a; });
 
   useEffect(() => { guardar(estado); }, [estado]);
 
@@ -248,7 +287,7 @@ export function Apolin() {
     <>
       {abierto && (
         <section role="dialog" aria-label="Apolin, asistente virtual" aria-modal="false"
-          style={movil ? { zIndex: Z } : { zIndex: Z, ...lugarDelChat(pos) }}
+          style={movil ? { zIndex: Z } : { zIndex: Z, ...lugarDelChat(pos, amplio) }}
           className={`fixed flex flex-col overflow-hidden bg-paper ${movil ? 'inset-0' : 'rounded-3xl shadow-[0_18px_50px_-12px_rgba(22,54,38,.45)] ring-1 ring-line'}`}>
           <header {...(movil ? {} : manejadores)} title={movil ? undefined : 'Arrastra para mover a Apolin'}
             className={`flex touch-none select-none items-center gap-3 bg-pine px-4 py-3 text-white ${movil ? '' : arrastrando ? 'cursor-grabbing' : 'cursor-grab'}`}>
@@ -261,6 +300,12 @@ export function Apolin() {
                 {estado.usuario ? `${estado.usuario.nombre} · ${estado.usuario.departamento}` : 'Asistente virtual de Sistemas'}
               </span>
             </span>
+            {!movil && (
+              <button type="button" data-no-arrastrar onClick={alternarAmplio} className="rounded-xl p-2 text-white/80 hover:bg-white/10 hover:text-white"
+                title={amplio ? 'Achicar' : 'Agrandar'} aria-label={amplio ? 'Achicar el chat' : 'Agrandar el chat'} aria-pressed={amplio}>
+                {amplio ? <Minimize2 className="size-5" /> : <Maximize2 className="size-5" />}
+              </button>
+            )}
             <button type="button" data-no-arrastrar onClick={reiniciar} className="rounded-xl p-2 text-white/80 hover:bg-white/10 hover:text-white" title="Empezar de nuevo" aria-label="Empezar una conversación nueva">
               <RotateCcw className="size-5" />
             </button>
@@ -274,6 +319,7 @@ export function Apolin() {
             {cargando && (
               <li className="flex items-center gap-2 self-start rounded-2xl rounded-bl-md bg-white px-3.5 py-2.5 text-muted ring-1 ring-line" aria-label="Apolin está escribiendo">
                 <span className="flex gap-1">{[0, 1, 2].map((k) => <span key={k} className="size-1.5 animate-bounce rounded-full bg-pine-600" style={{ animationDelay: `${k * 120}ms` }} />)}</span>
+                {lento && <span className="text-sm">Pensando la respuesta…</span>}
               </li>
             )}
             {!cargando && estado.opciones.length > 0 && (
