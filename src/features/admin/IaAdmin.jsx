@@ -104,7 +104,7 @@ function SelectorModelo({ id, valor, onCambio, onCargar, modelos, cargando, plac
 
 function Ajustes({ alGuardar }) {
   const admin = useAdmin();
-  const { data, loading, setData } = useCarga('/apolin/ia');
+  const { data, loading, error, recargar: recargarAjustes, setData } = useCarga('/apolin/ia');
   const [d, setD] = useState(null);
   const [preset, setPreset] = useState('groq');
   const [modelos, setModelos] = useState({ nube: [], local: [] });
@@ -119,6 +119,15 @@ function Ajustes({ alGuardar }) {
     setPreset(data.nube.url ? presetDe(data.nube.url).id : 'groq');
   }, [data]);
   if (loading && !data) return <Cargando />;
+  if (error) {
+    return (
+      <Alert>
+        No se pudieron cargar los ajustes: {error.message}.
+        {error.status === 404 && ' El backend del servidor todavía no tiene esta versión: actualícelo y reinícielo.'}
+        {' '}<button type="button" onClick={recargarAjustes} className="font-bold underline">Reintentar</button>
+      </Alert>
+    );
+  }
   if (!d) return null;
 
   const setNube = (k, v) => setD((x) => ({ ...x, nube: { ...x.nube, [k]: v } }));
@@ -128,8 +137,11 @@ function Ajustes({ alGuardar }) {
   function elegirPreset(id) {
     setPreset(id);
     const nuevo = PROVEEDORES.find((x) => x.id === id);
-    if (id !== 'otro') setD((x) => ({ ...x, nube: { ...x.nube, nombre: nuevo.nombre, url: nuevo.url, busqueda: id === 'groq' ? x.nube.busqueda : false } }));
+    const mismo = id === presetDe(data.nube.url).id;
+    // Otro servicio: el modelo y la clave guardados no le sirven
+    if (id !== 'otro') setD((x) => ({ ...x, nube: { ...x.nube, nombre: nuevo.nombre, url: nuevo.url, modelo: mismo ? data.nube.modelo : '', busqueda: id === 'groq' ? x.nube.busqueda : false } }));
     setModelos((m) => ({ ...m, nube: [] }));
+    setErrores({});
   }
 
   async function cargarModelos(proveedor) {
@@ -145,6 +157,10 @@ function Ajustes({ alGuardar }) {
 
   async function guardar(e) {
     e.preventDefault();
+    const er = {};
+    if (cambioServicio && !d.nube.clave.trim() && !d.nube.quitarClave) er['nube.clave'] = 'Pegue la clave del nuevo proveedor (la guardada es de otro servicio)';
+    if (d.nube.url && !d.nube.modelo.trim() && !d.nube.quitarClave) er['nube.modelo'] = 'Indique el modelo (use "Ver modelos")';
+    if (Object.keys(er).length) { setErrores(er); return; }
     setGuardando(true); setErrores({}); avisar(null);
     try {
       setData(await admin.put('/apolin/ia', d));
@@ -154,7 +170,8 @@ function Ajustes({ alGuardar }) {
     finally { setGuardando(false); }
   }
 
-  const sinClave = !data.nube.claveConfigurada && !d.nube.clave;
+  const cambioServicio = Boolean(d.nube.url) && d.nube.url.replace(/\/+$/, '') !== String(data.nube.url || '').replace(/\/+$/, '');
+  const sinClave = (cambioServicio || !data.nube.claveConfigurada) && !d.nube.clave;
 
   return (
     <form onSubmit={guardar} noValidate className="flex flex-col gap-6">
@@ -176,8 +193,8 @@ function Ajustes({ alGuardar }) {
           )}
         </div>
         <Field label="Clave de la API" error={errores['nube.clave']}
-          hint={data.nube.claveConfigurada ? `Hay una clave guardada (termina en …${data.nube.claveFinal}). Déjelo vacío para conservarla.` : 'Se guarda solo en el servidor; nunca se muestra completa.'}>
-          <Input type="password" value={d.nube.clave} onChange={(e) => setNube('clave', e.target.value)} autoComplete="new-password" placeholder={data.nube.claveConfigurada ? '•••••••• (sin cambios)' : 'Pegue aquí la clave'} spellCheck={false} />
+          hint={cambioServicio ? `Nueva clave de ${d.nube.nombre || 'este servicio'}: la guardada es de otro proveedor.` : data.nube.claveConfigurada ? `Hay una clave guardada (termina en …${data.nube.claveFinal}). Déjelo vacío para conservarla.` : 'Se guarda solo en el servidor; nunca se muestra completa.'}>
+          <Input type="password" value={d.nube.clave} onChange={(e) => setNube('clave', e.target.value)} autoComplete="new-password" placeholder={data.nube.claveConfigurada && !cambioServicio ? '•••••••• (sin cambios)' : 'Pegue aquí la clave'} spellCheck={false} />
         </Field>
         {data.nube.claveConfigurada && (
           <label className="-mt-2 flex items-center gap-2 text-sm text-muted">
