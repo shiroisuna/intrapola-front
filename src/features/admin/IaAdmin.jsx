@@ -12,10 +12,12 @@ import { Interruptor, useAviso, useCarga } from './componentes.jsx';
  */
 const PROVEEDORES = [
   { id: 'groq', nombre: 'Groq', url: 'https://api.groq.com/openai/v1', nota: 'Plan gratis sin tarjeta. La búsqueda en internet funciona con openai/gpt-oss-20b y openai/gpt-oss-120b.' },
-  { id: 'gemini', nombre: 'Gemini', url: 'https://generativelanguage.googleapis.com/v1beta/openai', nota: 'Clave de Google AI Studio. En el plan gratis Google puede usar las preguntas para mejorar sus productos.' },
+  { id: 'gemini', nombre: 'Gemini', url: 'https://generativelanguage.googleapis.com/v1beta/openai', nota: 'Clave de Google AI Studio. Puede buscar en Google. En el plan gratis Google puede usar las preguntas para mejorar sus productos.' },
   { id: 'openrouter', nombre: 'OpenRouter', url: 'https://openrouter.ai/api/v1', nota: 'Use modelos que terminen en ":free". Pocas preguntas gratis al día.' },
   { id: 'otro', nombre: '', url: '', nota: 'Cualquier servicio compatible con la API de OpenAI (/chat/completions).' },
 ];
+/** Proveedores con búsqueda en internet. */
+const BUSCAN = ['groq', 'gemini'];
 const ORDENES = [
   ['nube,local', 'Nube primero; si falla o se acaba, el servidor'],
   ['local,nube', 'Servidor primero; si falla, la nube'],
@@ -67,7 +69,7 @@ function Estado({ data, recargar, cargando }) {
           return (
             <li key={p.id} className="flex flex-col gap-1 rounded-xl bg-sage-50 p-3.5">
               <p className="flex items-center gap-2 font-bold"><Icono className="size-4 text-pine" aria-hidden />{p.id === 'nube' ? `Nube: ${p.nombre}` : 'Servidor: Ollama'}</p>
-              {p.modelo && <p className="break-all text-sm text-muted">Modelo {p.modelo}</p>}
+              {p.modelo && <p className="break-all text-sm text-muted">Modelo {p.modelo}{p.respaldo?.length ? ` · respaldo: ${p.respaldo.join(', ')}` : ''}</p>}
               {p.id === 'nube' && p.configurado && <p className="text-sm text-muted">Búsqueda en internet: {{ activa: 'activa', apagada: 'apagada', rechazada: 'el modelo no la admite' }[p.busqueda]}</p>}
               <p className={`text-sm font-bold ${clase}`}>{texto}</p>
               {p.configurado && <p className="text-sm text-muted">Hoy: {p.uso.preguntas} {p.uso.preguntas === 1 ? 'respuesta' : 'respuestas'} · {p.uso.tokens.toLocaleString('es-VE')} tokens{p.uso.errores ? ` · ${p.uso.errores} ${p.uso.errores === 1 ? 'falla' : 'fallas'}` : ''}</p>}
@@ -139,7 +141,7 @@ function Ajustes({ alGuardar }) {
     const nuevo = PROVEEDORES.find((x) => x.id === id);
     const mismo = id === presetDe(data.nube.url).id;
     // Otro servicio: el modelo y la clave guardados no le sirven
-    if (id !== 'otro') setD((x) => ({ ...x, nube: { ...x.nube, nombre: nuevo.nombre, url: nuevo.url, modelo: mismo ? data.nube.modelo : '', busqueda: id === 'groq' ? x.nube.busqueda : false } }));
+    if (id !== 'otro') setD((x) => ({ ...x, nube: { ...x.nube, nombre: nuevo.nombre, url: nuevo.url, modelo: mismo ? data.nube.modelo : '', respaldo: mismo ? (data.nube.respaldo ?? '') : '', busqueda: BUSCAN.includes(id) ? x.nube.busqueda : false } }));
     setModelos((m) => ({ ...m, nube: [] }));
     setErrores({});
   }
@@ -206,10 +208,15 @@ function Ajustes({ alGuardar }) {
           <SelectorModelo id="nube" valor={d.nube.modelo} onCambio={(v) => setNube('modelo', v)} modelos={modelos.nube} cargando={cargandoModelos === 'nube'}
             onCargar={() => cargarModelos('nube')} placeholder="openai/gpt-oss-120b" />
         </Field>
+        <Field label="Modelos de respaldo" opcional error={errores['nube.respaldo']}
+          hint="Separados por coma. Si el modelo principal está saturado (error 503) se prueban en ese orden antes de pasar a Ollama.">
+          <Input list="nube-modelos" value={d.nube.respaldo ?? ''} onChange={(e) => setNube('respaldo', e.target.value)} placeholder="Ej. gemini-3.6-flash, gemini-3.5-flash-lite" spellCheck={false} />
+        </Field>
         <div className="flex flex-col gap-1">
-          <Interruptor activo={d.nube.busqueda} onCambio={(v) => setNube('busqueda', v)} deshabilitado={preset !== 'groq'}
+          <Interruptor activo={d.nube.busqueda} onCambio={(v) => setNube('busqueda', v)} deshabilitado={!BUSCAN.includes(preset)}
             etiqueta="Buscar en internet cuando la pregunta lo necesite (clima, precios, noticias)" />
-          <p className="text-sm text-muted">{preset === 'groq' ? 'Gasta más cupo por pregunta. Si el modelo no la admite, Apolin la apaga sola.' : 'Disponible solo con Groq.'}</p>
+          <p className="text-sm text-muted">{preset === 'gemini' ? 'Usa la Búsqueda de Google: 5.000 búsquedas al mes gratis (solo cuenta cuando el modelo decide buscar).'
+            : preset === 'groq' ? 'Gasta más cupo por pregunta. Si el modelo no la admite, Apolin la apaga sola.' : 'Disponible solo con Groq y Gemini.'}</p>
         </div>
       </fieldset>
 
